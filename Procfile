@@ -1,1 +1,1 @@
-web: node -r esm dist/server.js
+web: npm run serve
