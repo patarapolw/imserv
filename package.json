@@ -41,7 +41,7 @@
   },
   "scripts": {
     "dev": "webpack-dev-server --open --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js",
+    "build": "tsc && webpack --config webpack.prod.js",
     "serve": "ts-node -r esm src/server.ts",
     "generate": "ts-node -r esm src/generate.ts"
   },
