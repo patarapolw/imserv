@@ -6,7 +6,7 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, "dist"),
-        filename: "[name].min.js"
+        filename: "[name].bundle.js"
     },
     module: {
         rules: [
