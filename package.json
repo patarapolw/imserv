@@ -1,7 +1,7 @@
 {
   "name": "imserv",
   "version": "1.0.0",
-  "description": "Image Server from a specified location",
+  "description": "Image Server from a specified online location, designed specifically for Git",
   "main": "dist/server.js",
   "author": "Pacharapol Withayasakpunt",
   "license": "MIT",
