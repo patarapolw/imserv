@@ -29,7 +29,7 @@ client.connect((err) => {
                 query = {};
             }
 
-            imageCol.find(query).toArray().then((r: any[]) => {
+            imageCol.find(query).sort({path: 1}).toArray().then((r: any[]) => {
                 const folders: string[] = [];
                 const contents = r.map((el) => {
                     let cond = true;
