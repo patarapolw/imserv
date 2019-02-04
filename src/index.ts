@@ -47,7 +47,7 @@ fetch(fetchUrl)
             const $img = $(`
             <div class="thumbnail-wrapper">
                 <img class="thumbnail captioned" src="./folder.svg">
-                <div class="caption">${/\/?([^/]+)$/.exec(el)[1]}</div>
+                <div class="caption">${/([^/]+)$/.exec(el)![1]}</div>
             </div>`);
             $img.click(() => {
                 location.href = `/?path=${encodeURIComponent(el)}`;
@@ -59,7 +59,7 @@ fetch(fetchUrl)
 
             const $img = $(`
             <div class="thumbnail-wrapper">
-                <img class="thumbnail uncaptioned" src="${el.url}">
+                <img class="thumbnail uncaptioned" src="${el.url}" alt="${/([^/]+)$/.exec(el.path)![1]}">
             </div>`);
             $mainArea.append($img);
         }
