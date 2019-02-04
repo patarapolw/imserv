@@ -33,8 +33,8 @@ client.connect((err) => {
                 const folders: string[] = [];
                 const contents = r.map((el) => {
                     let cond = true;
-                    if (pathRegex) {
-                        cond = pathRegex.test(el.path);
+                    if (pathRegex !== undefined) {
+                        cond = (el.path.replace(pathRegex, "").substring(1).indexOf("/") === -1);
                     } else {
                         cond = (el.path.indexOf("/") === -1);
                     }
@@ -45,13 +45,21 @@ client.connect((err) => {
                             url: new URL(el.path, process.env.ONLINE_IMG_FOLDER!).href
                         };
                     } else {
-                        folders.push(el.path.replace(/\/[^/]+$/, ""));
+                        let folderName = el.path;
+                        if (pathRegex !== undefined) {
+                            folderName = folderName.replace(pathRegex, "").substring(1);
+                        }
+                        folderName = /^([^/]+)\//.exec(folderName)![1];
+
+                        folders.push(folderName);
                         return null;
                     }
                 });
 
                 res.send([
-                    ...folders.filter((el, i) => folders.indexOf(el) === i),
+                    ...folders.filter((el, i) => folders.indexOf(el) === i).map((el) => {
+                        return p ? `${p}/${el}` : el;
+                    }),
                     ...contents.filter((el) => el !== null)
                 ]);
             });

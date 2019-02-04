@@ -47,7 +47,7 @@ fetch(fetchUrl)
             const $img = $(`
             <div class="thumbnail-wrapper">
                 <img class="thumbnail captioned" src="./folder.svg">
-                <div class="caption">${el.replace(/.+\//g, "")}</div>
+                <div class="caption">${/\/?([^/]+)$/.exec(el)[1]}</div>
             </div>`);
             $img.click(() => {
                 location.href = `/?path=${encodeURIComponent(el)}`;
