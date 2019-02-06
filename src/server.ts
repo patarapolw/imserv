@@ -66,7 +66,7 @@ client.connect((err) => {
         }
 
         if (req.query._id) {
-            imageCol.findOne(req.params._id).then((r) => {
+            imageCol.findOne(req.query._id).then((r) => {
                 res.redirect(new URL(r.path, process.env.ONLINE_IMG_FOLDER!).href);
             });
         } else {
