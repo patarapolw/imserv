@@ -32,27 +32,35 @@ client.connect((err) => {
             imageCol.find(query).sort({path: 1}).toArray().then((r: any[]) => {
                 const folders: string[] = [];
                 const contents = r.map((el) => {
-                    let cond = true;
-                    if (pathRegex !== undefined) {
-                        cond = (el.path.replace(pathRegex, "").substring(1).indexOf("/") === -1);
-                    } else {
-                        cond = (el.path.indexOf("/") === -1);
-                    }
-
-                    if (cond) {
+                    try {
+                        const url = new URL(el.path).href;
                         return {
                             ...el,
-                            url: new URL(el.path, process.env.ONLINE_IMG_FOLDER!).href
+                            url
                         };
-                    } else {
-                        let folderName = el.path;
+                    } catch (e) {
+                        let cond = true;
                         if (pathRegex !== undefined) {
-                            folderName = folderName.replace(pathRegex, "").substring(1);
+                            cond = (el.path.replace(pathRegex, "").substring(1).indexOf("/") === -1);
+                        } else {
+                            cond = (el.path.indexOf("/") === -1);
                         }
-                        folderName = /^([^/]+)\//.exec(folderName)![1];
 
-                        folders.push(folderName);
-                        return null;
+                        if (cond) {
+                            return {
+                                ...el,
+                                url: el.url || new URL(el.path, process.env.ONLINE_IMG_FOLDER!).href
+                            };
+                        } else {
+                            let folderName = el.path;
+                            if (pathRegex !== undefined) {
+                                folderName = folderName.replace(pathRegex, "").substring(1);
+                            }
+                            folderName = /^([^/]+)\//.exec(folderName)![1];
+
+                            folders.push(folderName);
+                            return null;
+                        }
                     }
                 });
 
