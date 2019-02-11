@@ -5,7 +5,7 @@ import url from "url";
 
 import "viewerjs/dist/viewer.css";
 import "jquery-contextmenu/dist/jquery.contextMenu.min.css";
-import "./index.css";
+import "./renderer/index.css";
 
 interface IUrlToId {
     [key: string]: string;
