@@ -49,10 +49,12 @@
   },
   "scripts": {
     "start": "ts-node -r esm src/server.ts",
+    "generate": "ts-node -r esm src/script/generate.ts",
     "build": "webpack --config webpack.prod.js",
     "pre-commit": "yarn run build && git add .",
     "front:watch": "webpack --watch webpack.dev.js",
     "back:watch": "ts-node-dev -r esm src/server.ts",
+    "watch": "yarn run back:watch",
     "dev": "concurrently 'yarn run front:watch' 'yarn run back:watch'"
   },
   "pre-commit": [

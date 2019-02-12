@@ -6,6 +6,7 @@ export const mongoClient = new MongoClient(process.env.MONGO_URI!, {useNewUrlPar
 
 export interface IDbImage {
     _id: string;
+    path: string;
     url: string;
     md5?: string;
     imghash?: string;

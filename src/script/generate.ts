@@ -53,6 +53,9 @@ async function processFile(file: string, db: Database, existingMd5: string[]): P
     }) as string;
     let data: Partial<IDbImage>;
 
+    const filePath = path.relative(process.env.LOCAL_DIR!, file);
+    const fileUrl = new URL(filePath, process.env.GITHUB_RAW_DIR!).href;
+
     if (existingMd5.indexOf(_md5 as string) === -1) {
         const _imghash = await new Promise((resolve, reject) => {
             console.log(`Calculating hash for file: ${file}`);
@@ -61,14 +64,16 @@ async function processFile(file: string, db: Database, existingMd5: string[]): P
 
         data = {
             _id: shortId.generate(),
-            url: path.relative(process.env.LOCAL_DIR!, file),
+            path: filePath,
+            url: fileUrl,
             imghash: _imghash,
             md5: _md5
         } as IDbImage;
     } else {
         data = {
             _id: shortId.generate(),
-            url: path.relative(process.env.LOCAL_DIR!, file),
+            path: filePath,
+            url: fileUrl,
             md5: _md5
         } as Partial<IDbImage>;
     }
@@ -79,10 +84,11 @@ async function processFile(file: string, db: Database, existingMd5: string[]): P
 
 async function processMd(file: string, db: Database, existingUrl: string[]): Promise<string[]> {
     return await Promise.all(fs.readFileSync(file, "utf8").trim().split(/^-{3,}$/gm)
-        .map((note) => processUrl(note, db, existingUrl)));
+        .map((note) => processUrl(path.relative(process.env.LOCAL_DIR!, file),
+        note, db, existingUrl)));
 }
 
-async function processUrl(note: string, db: Database, existingUrl: string[]): Promise<string> {
+async function processUrl(filePath: string, note: string, db: Database, existingUrl: string[]): Promise<string> {
     const m = /!\[[^\]]*\]\((.+)\)/.exec(note);
     if (!m) {
         console.log(`Fail to read ${note}`);
@@ -108,6 +114,7 @@ async function processUrl(note: string, db: Database, existingUrl: string[]): Pr
 
             const data = {
                 _id: shortId.generate(),
+                path: filePath,
                 url,
                 // imghash: _imghash,
                 // md5: _md5,
@@ -126,17 +133,15 @@ async function processUrl(note: string, db: Database, existingUrl: string[]): Pr
 }
 
 async function doUpsertMany(data: Partial<IDbImage>, db: Database) {
-    const {url, ...insert} = data;
     let cond: any;
 
-    if (url) {
-        cond = {url};
-    } else {
+    if (data.md5) {
         cond = {md5: data.md5};
+    } else {
+        cond = {url: data.url};
     }
 
     return await db.image.updateOne(cond, {
-        $set: {url},
-        $setOnInsert: insert
+        $setOnInsert: data
     }, {upsert: true});
 }

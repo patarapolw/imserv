@@ -20,7 +20,7 @@ import Database, { mongoClient, IDbImage } from "./server/Database";
             let pathRegex: any;
             if (p !== undefined) {
                 pathRegex = new RegExp(`^${XRegExp.escape(p)}`);
-                query = {url: pathRegex};
+                query = {path: pathRegex};
             } else {
                 query = {};
             }
@@ -29,36 +29,27 @@ import Database, { mongoClient, IDbImage } from "./server/Database";
                 const folders: string[] = [];
                 const contents = r.map((el) => {
                     // tslint:disable-next-line: prefer-const
-                    let {url, ...remaining} = el;
-                    try {
-                        url = new URL(url).href;
-                        return {
-                            ...remaining,
-                            url
-                        };
-                    } catch (e) {
-                        let cond = true;
+                    let {path, ...remaining} = el;
+                    let cond = true;
+                    if (pathRegex !== undefined) {
+                        const subPath = path.replace(pathRegex, "").substring(1);
+                        cond =  (subPath.indexOf("/") === -1 && !/^[^/]+\.md$/.test(subPath));
+                    } else {
+                        cond = (path.indexOf("/") === -1 && !/^[^/]+\.md$/.test(path));
+                    }
+
+                    if (cond) {
+                        return el;
+                    } else {
+                        let folderName = path;
                         if (pathRegex !== undefined) {
-                            cond = (url.replace(pathRegex, "").substring(1).indexOf("/") === -1);
-                        } else {
-                            cond = (url.indexOf("/") === -1);
+                            folderName = folderName.replace(pathRegex, "").substring(1);
                         }
+                        const m = /^([^/]+)\//.exec(folderName);
+                        folderName = m ? m[1] : folderName;
 
-                        if (cond) {
-                            return {
-                                ...remaining,
-                                url: new URL(url, process.env.GITHUB_RAW_DIR!).href
-                            };
-                        } else {
-                            let folderName = url;
-                            if (pathRegex !== undefined) {
-                                folderName = folderName.replace(pathRegex, "").substring(1);
-                            }
-                            folderName = /^([^/]+)\//.exec(folderName)![1];
-
-                            folders.push(folderName);
-                            return null;
-                        }
+                        folders.push(folderName);
+                        return null;
                     }
                 });
 
