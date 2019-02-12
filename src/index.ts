@@ -1,6 +1,6 @@
 import Viewer from "viewerjs";
 import $ from "jquery";
-import { ContextMenu } from "jquery-contextmenu";
+import {ContextMenu} from "jquery-contextmenu";
 import url from "url";
 
 import "viewerjs/dist/viewer.css";
@@ -56,10 +56,13 @@ fetch(fetchUrl)
             $mainArea.append($img);
         } else {
             urlToId[el.url] = el._id;
+            console.log(el);
 
             const $img = $(`
             <div class="thumbnail-wrapper">
-                <img class="thumbnail uncaptioned" src="${el.url}" alt="${/([^/]+)$/.exec(el.path)![1]}">
+                <img class="thumbnail uncaptioned" src="${el.url}" alt="${
+                    (el.note || "").replace(/!\[.*\]\(.*\)/g, "").trim()
+                    || /([^/]+)$/.exec(el.url)![1]}">
             </div>`);
             $mainArea.append($img);
         }

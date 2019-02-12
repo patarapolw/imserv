@@ -1,58 +1,56 @@
 import express from "express";
 import bodyParser from "body-parser";
-import dotenv from "dotenv";
-import { MongoClient } from "mongodb";
+import XRegExp from "xregexp";
+import Database, { mongoClient, IDbImage } from "./server/Database";
 
-dotenv.config();
-const client = new MongoClient(process.env.MONGO_URI!, {useNewUrlParser: true});
-const app = express();
+(async () => {
+    await mongoClient.connect();
+    const db = new Database();
 
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(express.static("public"));
-app.use(express.static("dist"));
+    const app = express();
+    app.use(bodyParser.urlencoded({extended: true}));
+    app.use(express.static("public"));
+    app.use(express.static("dist"));
 
-client.connect((err) => {
-    if (err) {
-        console.error(err);
-    }
-
-    const imageCol = client.db("image").collection("image");
+    const port = process.env.PORT || "5000";
 
     app.get("/img", (req, res) => {
         function sendFromPath(p?: string) {
-            let query: any;
+            let query: Partial<IDbImage>;
             let pathRegex: any;
             if (p !== undefined) {
-                pathRegex = new RegExp(`^${escapeRegExp(p)}`);
-                query = {path: pathRegex};
+                pathRegex = new RegExp(`^${XRegExp.escape(p)}`);
+                query = {url: pathRegex};
             } else {
                 query = {};
             }
 
-            imageCol.find(query).sort({path: 1}).toArray().then((r: any[]) => {
+            db.image.find(query).sort({path: 1}).toArray().then((r: IDbImage[]) => {
                 const folders: string[] = [];
                 const contents = r.map((el) => {
+                    // tslint:disable-next-line: prefer-const
+                    let {url, ...remaining} = el;
                     try {
-                        const url = new URL(el.path).href;
+                        url = new URL(url).href;
                         return {
-                            ...el,
+                            ...remaining,
                             url
                         };
                     } catch (e) {
                         let cond = true;
                         if (pathRegex !== undefined) {
-                            cond = (el.path.replace(pathRegex, "").substring(1).indexOf("/") === -1);
+                            cond = (url.replace(pathRegex, "").substring(1).indexOf("/") === -1);
                         } else {
-                            cond = (el.path.indexOf("/") === -1);
+                            cond = (url.indexOf("/") === -1);
                         }
 
                         if (cond) {
                             return {
-                                ...el,
-                                url: el.url || new URL(el.path, process.env.ONLINE_IMG_FOLDER!).href
+                                ...remaining,
+                                url: new URL(url, process.env.GITHUB_RAW_DIR!).href
                             };
                         } else {
-                            let folderName = el.path;
+                            let folderName = url;
                             if (pathRegex !== undefined) {
                                 folderName = folderName.replace(pathRegex, "").substring(1);
                             }
@@ -74,17 +72,13 @@ client.connect((err) => {
         }
 
         if (req.query._id) {
-            imageCol.findOne({_id: req.query._id}).then((r) => {
-                res.redirect(new URL(r.path, process.env.ONLINE_IMG_FOLDER!).href);
+            db.image.findOne({_id: req.query._id}).then((r) => {
+                res.redirect(new URL(r!.url, process.env.GITHUB_RAW_DIR!).href);
             });
         } else {
             sendFromPath(req.query.path);
         }
     });
 
-    app.listen(process.env.PORT, () => console.log(`App listening on port ${process.env.PORT}!`));
-});
-
-function escapeRegExp(s: string) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
-}
+    app.listen(port, () => console.log(`App listening on port ${port}!`));
+})();
