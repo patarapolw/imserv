@@ -5,7 +5,6 @@ import md5 from "md5";
 import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
-import fetch from "node-fetch";
 import Database, { mongoClient, IDbImage } from "../server/Database";
 
 dotenv.config();
@@ -128,11 +127,15 @@ async function processUrl(note: string, db: Database, existingUrl: string[]): Pr
 
 async function doUpsertMany(data: Partial<IDbImage>, db: Database) {
     const {url, ...insert} = data;
+    let cond: any;
 
-    return await db.image.updateOne({$or: [
-        {md5: data.md5},
-        {url}
-    ]}, {
+    if (url) {
+        cond = {url};
+    } else {
+        cond = {md5: data.md5};
+    }
+
+    return await db.image.updateOne(cond, {
         $set: {url},
         $setOnInsert: insert
     }, {upsert: true});
