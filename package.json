@@ -22,6 +22,7 @@
     "@types/md5": "^2.1.33",
     "@types/mongodb": "^3.1.19",
     "@types/node": "^10.12.21",
+    "@types/node-fetch": "^2.1.6",
     "@types/shortid": "^0.0.29",
     "body-parser": "^1.18.3",
     "dotenv": "^6.2.0",
