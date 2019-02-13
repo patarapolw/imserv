@@ -3,11 +3,8 @@ import shortId from "shortid";
 import imageHash from "image-hash";
 import md5 from "md5";
 import path from "path";
-import dotenv from "dotenv";
 import fs from "fs";
 import Database, { mongoClient, IDbImage } from "../server/Database";
-
-dotenv.config();
 
 (async () => {
     await mongoClient.connect();

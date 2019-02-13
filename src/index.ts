@@ -1,9 +1,11 @@
 import Viewer from "viewerjs";
 import $ from "jquery";
-import {ContextMenu} from "jquery-contextmenu";
-import url from "url";
+import { ContextMenu } from "jquery-contextmenu";
+import m from "mithril";
+import "bootstrap";
 
 import "viewerjs/dist/viewer.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "jquery-contextmenu/dist/jquery.contextMenu.min.css";
 import "./renderer/index.css";
 
@@ -30,50 +32,96 @@ contextmenu.create({
     }
 });
 
-const path = url.parse(location.href, true).query.path;
-let fetchUrl: string;
-if (path) {
-    fetchUrl = `/img?path=${encodeURIComponent(path as string)}`;
-} else {
-    fetchUrl = "/img";
-}
+m.mount(document.getElementById("App") as HTMLDivElement, () => {
+    let currentTab: "gross" | "micro" | "browse" = "gross";
+    let fetchUrl = "/img/random?path=gross";
+    let gallery: Viewer | null = null;
 
-fetch(fetchUrl)
-.then((r) => r.json()).then((r) => {
-    const mainArea = document.getElementById("App") as HTMLDivElement;
-    const $mainArea = $(mainArea);
-    r.forEach((el: any) => {
-        if (typeof el === "string") {
-            const $img = $(`
-            <div class="thumbnail-wrapper">
-                <img class="thumbnail captioned" src="./folder.svg">
-                <div class="caption">${/([^/]+)$/.exec(el)![1]}</div>
-            </div>`);
-            $img.click(() => {
-                location.href = `/?path=${encodeURIComponent(el)}`;
+    function doFetch(vnode: any) {
+        fetch(fetchUrl)
+        .then((r) => r.json()).then((r) => {
+            const $mainArea = $("#gallery", vnode.dom);
+            $mainArea.html("");
+
+            r.forEach((el: any) => {
+                if (typeof el === "string") {
+                    const $img = $(`
+                    <div class="thumbnail-wrapper">
+                        <img class="thumbnail captioned" src="./folder.svg">
+                        <div class="caption">${/([^/]+)$/.exec(el)![1]}</div>
+                    </div>`);
+                    $img.click(() => {
+                        fetchUrl = `/img?path=${encodeURIComponent(el)}`;
+                        m.redraw();
+                    });
+
+                    $mainArea.append($img);
+                } else {
+                    urlToId[el.url] = el._id;
+                    console.log(el);
+
+                    const $img = $(`
+                    <div class="thumbnail-wrapper">
+                        <img class="thumbnail uncaptioned" src="${el.url}" alt="${
+                            (el.note || "").replace(/!\[.*\]\(.*\)/g, "").trim()
+                            || /([^/]+)$/.exec(el.url)![1]}">
+                    </div>`);
+                    $mainArea.append($img);
+                }
             });
 
-            $mainArea.append($img);
-        } else {
-            urlToId[el.url] = el._id;
-            console.log(el);
+            if (gallery) {
+                gallery.destroy();
+            }
 
-            const $img = $(`
-            <div class="thumbnail-wrapper">
-                <img class="thumbnail uncaptioned" src="${el.url}" alt="${
-                    (el.note || "").replace(/!\[.*\]\(.*\)/g, "").trim()
-                    || /([^/]+)$/.exec(el.url)![1]}">
-            </div>`);
-            $mainArea.append($img);
-        }
-    });
+            gallery = new Viewer($mainArea.get(0), {
+                className: "gallery",
+                filter(img: HTMLImageElement) {
+                    return !/\.svg$/.test(img.src);
+                }
+            });
+        });
+    }
 
-    const gallery = new Viewer(mainArea, {
-        className: "gallery",
-        filter(img: HTMLImageElement) {
-            return !/\.svg$/.test(img.src);
+    return {
+        oncreate(vnode) {
+            doFetch(vnode);
+        },
+        view() {
+            return m("div", [
+                m("ul.nav.justify-content-center", [
+                    m("li.nav-item", [
+                        m(`a.nav-link[href=#]${currentTab === "gross" ? ".active" : ""}`, {
+                            onclick() {
+                                currentTab = "gross";
+                                fetchUrl = "/img/random?path=gross";
+                            }
+                        }, "Gross")
+                    ]),
+                    m("li.nav-item", [
+                        m(`a.nav-link[href=#]${currentTab === "micro" ? ".active" : ""}`, {
+                            onclick() {
+                                currentTab = "micro";
+                                fetchUrl = "/img/random";
+                            }
+                        }, "Micro")
+                    ]),
+                    m("li.nav-item", [
+                        m(`a.nav-link[href=#]${currentTab === "browse" ? ".active" : ""}`, {
+                            onclick() {
+                                currentTab = "browse";
+                                fetchUrl = "/img";
+                            }
+                        }, "Browse")
+                    ])
+                ]),
+                m("#gallery")
+            ]);
+        },
+        onupdate(vnode) {
+            doFetch(vnode);
         }
-    });
+    };
 });
 
 function copyTextToClipboard(text: string) {

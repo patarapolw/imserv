@@ -2,6 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import XRegExp from "xregexp";
 import Database, { mongoClient, IDbImage } from "./server/Database";
+import { shuffle } from "./util";
 
 (async () => {
     await mongoClient.connect();
@@ -68,6 +69,15 @@ import Database, { mongoClient, IDbImage } from "./server/Database";
             });
         } else {
             sendFromPath(req.query.path);
+        }
+    });
+
+    app.get("/img/random", async (req, res) => {
+        try {
+            res.send(shuffle(await db.image.find({path: (req.query.path === "gross" ? /gross/ : /^((?!gross).)*$/)})
+            .toArray()).slice(0, 50));
+        } catch (e) {
+            res.sendStatus(500);
         }
     });
 
